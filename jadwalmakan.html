@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weight Gain & Prayer Schedule</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #1cc88a;
+            --warning: #f6c23e;
+            --danger: #e74a3b;
+            --info: #36b9cc;
+        }
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 10px 10px;
+        }
+        .shift-card {
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .shift-card:hover {
+            transform: translateY(-5px);
+        }
+        .shift-1 { border-top: 5px solid var(--primary); }
+        .shift-2 { border-top: 5px solid var(--success); }
+        .shift-3 { border-top: 5px solid var(--warning); }
+        .day-off { border-top: 5px solid var(--danger); }
+        
+        .time-block {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            border-left: 4px solid;
+            position: relative;
+        }
+        .prayer-time {
+            background-color: #f0f7ff;
+            border-left-color: var(--primary);
+        }
+        .meal-time {
+            background-color: #fff8e1;
+            border-left-color: var(--warning);
+        }
+        .study-time {
+            background-color: #e8f5e9;
+            border-left-color: var(--success);
+        }
+        .skill-time {
+            background-color: #e3f2fd;
+            border-left-color: var(--info);
+        }
+        .entertainment-time {
+            background-color: #f3e5f5;
+            border-left-color: #9c27b0;
+        }
+        .sleep-time {
+            background-color: #e8f4fd;
+            border-left-color: var(--primary);
+        }
+        .work-time {
+            background-color: #ffebee;
+            border-left-color: var(--danger);
+        }
+        .travel-time {
+            background-color: #e0f7fa;
+            border-left-color: var(--info);
+        }
+        .report-time {
+            background-color: #f3e5f5;
+            border-left-color: #7b1fa2;
+        }
+        .current-prayer {
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 0 2px rgba(66, 165, 245, 0.5);
+        }
+        .current-activity {
+            background-color: #fffacd;
+            border-left-width: 6px;
+            font-weight: bold;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(66, 165, 245, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(66, 165, 245, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(66, 165, 245, 0); }
+        }
+        .prayer-badge {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            font-size: 0.7rem;
+            background-color: var(--primary);
+            color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        .modal-highlight {
+            animation: modalPulse 1.5s infinite;
+        }
+        @keyframes modalPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+        .show-all-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Welcome Modal -->
+    <div class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="welcomeModalLabel">Your Current Schedule</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="currentShiftInfo"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header text-center">
+        <div class="container">
+            <h1 class="display-4">Weight Gain & Prayer Schedule</h1>
+            <p class="lead">For Jakarta Area | Integrated with Ministry of Religion API</p>
+            <div class="row mt-3">
+                <div class="col-md-6 mx-auto">
+                    <div class="card">
+                        <div class="card-body py-2">
+                            <div id="today-date" class="fw-bold"></div>
+                            <div id="prayer-times-header" class="d-flex justify-content-between mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> <strong>Important:</strong> No sleep during work shifts. Added reporting & travel time after work.
+        </div>
+
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="shift1-tab" data-bs-toggle="tab" data-bs-target="#shift1" type="button" role="tab">
+                    <i class="fas fa-sun"></i> Shift 1 (07:00-15:00)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="shift2-tab" data-bs-toggle="tab" data-bs-target="#shift2" type="button" role="tab">
+                    <i class="fas fa-cloud-sun"></i> Shift 2 (15:00-23:00)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="shift3-tab" data-bs-toggle="tab" data-bs-target="#shift3" type="button" role="tab">
+                    <i class="fas fa-moon"></i> Shift 3 (23:00-07:00)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="dayoff-tab" data-bs-toggle="tab" data-bs-target="#dayoff" type="button" role="tab">
+                    <i class="fas fa-umbrella-beach"></i> Day Off
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="myTabContent">
+            <!-- Shift 1 -->
+            <div class="tab-pane fade show active" id="shift1" role="tabpanel" aria-labelledby="shift1-tab">
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h4><i class="fas fa-calendar-day"></i> Daily Schedule</h4>
+                        <div id="shift1-schedule"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <i class="fas fa-clock"></i> Today's Prayer Times
+                            </div>
+                            <div class="card-body">
+                                <div id="prayer-times-detail" class="text-center"></div>
+                            </div>
+                        </div>
+                        <div class="card mt-3">
+                            <div class="card-header bg-success text-white">
+                                <i class="fas fa-utensils"></i> Meal Plan
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <strong>Breakfast:</strong> 5 egg whites + whole wheat bread + milk
+                                    </li>
+                                    <li class="list-group-item">
+                                        <strong>Lunch:</strong> Rice + meat + vegetables
+                                    </li>
+                                    <li class="list-group-item">
+                                        <strong>Dinner:</strong> Rice + fish/chicken + vegetables
+                                    </li>
+                                    <li class="list-group-item">
+                                        <strong>Snacks:</strong> Nuts, yogurt, fruits
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Shift 2 -->
+            <div class="tab-pane fade" id="shift2" role="tabpanel" aria-labelledby="shift2-tab">
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h4><i class="fas fa-calendar-day"></i> Daily Schedule</h4>
+                        <div id="shift2-schedule"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <i class="fas fa-clock"></i> Today's Prayer Times
+                            </div>
+                            <div class="card-body">
+                                <div id="prayer-times-detail2" class="text-center"></div>
+                            </div>
+                        </div>
+                        <div class="card mt-3">
+                            <div class="card-header bg-success text-white">
+                                <i class="fas fa-utensils"></i> Meal Plan
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <strong>Breakfast:</strong> Oatmeal + eggs + milk
+                                    </li>
+                                    <li class="list-group-item">
+                                        <strong>Lunch:</strong> Nasi Padang (extra meat)
+                                    </li>
+                                    <li class="list-group-item">
+                                        <strong>Dinner:</strong> Rice + chicken + soup
+                                    </li>
+                                    <li class="list-group-item">
+                                        <strong>Snacks:</strong> Cheese sandwich, protein bar
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Shift 3 -->
+            <div class="tab-pane fade" id="shift3" role="tabpanel" aria-labelledby="shift3-tab">
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h4><i class="fas fa-calendar-day"></i> Daily Schedule</h4>
+                        <div id="shift3-schedule"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <i class="fas fa-clock"></i> Today's Prayer Times
+                            </div>
+                            <div class="card-body">
+                                <div id="prayer-times-detail3" class="text-center"></div>
+                            </div>
+                        </div>
+                        <div class="card mt-3">
+                            <div class="card-header bg-success text-white">
+                                <i class="fas fa-utensils"></i> Meal Plan
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <strong>Breakfast:</strong> Rice + chicken + avocado
+                                    </li>
+                                    <li class="list-group-item">
+                                        <strong>Lunch:</strong> Nasi Padang (double meat)
+                                    </li>
+                                    <li class="list-group-item">
+                                        <strong>Dinner:</strong> Cereal + milk + banana
+                                    </li>
+                                    <li class="list-group-item">
+                                        <strong>Snacks:</strong> Boiled potatoes, nuts
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day Off -->
+            <div class="tab-pane fade" id="dayoff" role="tabpanel" aria-labelledby="dayoff-tab">
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h4><i class="fas fa-calendar-day"></i> Daily Schedule</h4>
+                        <div id="dayoff-schedule"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <i class="fas fa-clock"></i> Today's Prayer Times
+                            </div>
+                            <div class="card-body">
+                                <div id="prayer-times-detail4" class="text-center"></div>
+                            </div>
+                        </div>
+                        <div class="card mt-3">
+                            <div class="card-header bg-success text-white">
+                                <i class="fas fa-utensils"></i> Meal Plan
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <strong>Breakfast:</strong> Big portion with smoothie
+                                    </li>
+                                    <li class="list-group-item">
+                                        <strong>Lunch:</strong> Extra protein meal
+                                    </li>
+                                    <li class="list-group-item">
+                                        <strong>Dinner:</strong> Balanced meal
+                                    </li>
+                                    <li class="list-group-item">
+                                        <strong>Snacks:</strong> High-calorie options
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button id="showAllBtn" class="btn btn-primary show-all-btn" data-bs-toggle="tooltip" title="Show All Schedules">
+        <i class="fas fa-calendar-alt"></i> Show All
+    </button>
+
+    <footer class="bg-light text-center p-3 mt-4">
+        <p class="mb-0">Integrated Prayer Schedule © 2025 | Data from Kementerian Agama RI</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+            
+            // Initialize modal
+            const welcomeModal = new bootstrap.Modal(document.getElementById('welcomeModal'));
+            
+            // Get today's date in Indonesian format
+            const today = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('today-date').textContent = today.toLocaleDateString('id-ID', options);
+            
+            // Determine current shift based on time
+            function getCurrentShift() {
+                const hour = today.getHours();
+                const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+                
+                // Determine which week of the month (1-4)
+                const weekOfMonth = Math.ceil(today.getDate() / 7);
+                
+                // Week 4 is day off
+                if (weekOfMonth === 4) return { shift: 'dayoff', name: 'Day Off' };
+                
+                // Weeks 1-3: Shift 1, 2, 3 respectively
+                if (weekOfMonth === 1) return { shift: 'shift1', name: 'Shift 1 (07:00-15:00)' };
+                if (weekOfMonth === 2) return { shift: 'shift2', name: 'Shift 2 (15:00-23:00)' };
+                if (weekOfMonth === 3) return { shift: 'shift3', name: 'Shift 3 (23:00-07:00)' };
+                
+                return { shift: 'dayoff', name: 'Day Off' };
+            }
+            
+            // Fetch prayer times for Jakarta (DKI1)
+            fetch('https://api.myquran.com/v1/sholat/jadwal/1224/' + today.getFullYear() + '/' + (today.getMonth()+1) + '/' + today.getDate())
+                .then(response => response.json())
+                .then(data => {
+                    const prayerTimes = data.data.jadwal;
+                    displayPrayerTimes(prayerTimes);
+                    generateSchedules(prayerTimes);
+                    highlightCurrentPrayer(prayerTimes);
+                    
+                    // Show welcome modal with current shift info
+                    const currentShift = getCurrentShift();
+                    document.getElementById('currentShiftInfo').innerHTML = `
+                        <div class="alert alert-primary modal-highlight">
+                            <h4><i class="fas fa-user-clock"></i> You're currently on:</h4>
+                            <h2 class="text-center my-3">${currentShift.name}</h2>
+                            <p class="mb-0">Today's schedule has been automatically selected for you.</p>
+                        </div>
+                    `;
+                    
+                    // Show the modal
+                    welcomeModal.show();
+                    
+                    // Highlight current activity
+                    highlightCurrentActivity(currentShift.shift, prayerTimes);
+                    
+                    // Set up "Show All" button
+                    document.getElementById('showAllBtn').addEventListener('click', function() {
+                        // Show all tab contents
+                        document.querySelectorAll('.tab-pane').forEach(pane => {
+                            pane.classList.add('show', 'active');
+                        });
+                        
+                        // Make all tabs active
+                        document.querySelectorAll('.nav-link').forEach(tab => {
+                            tab.classList.add('active');
+                        });
+                        
+                        // Scroll to top
+                        window.scrollTo(0, 0);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching prayer times:', error);
+                    // Fallback data if API fails
+                    const fallbackTimes = {
+                        tanggal: today.toLocaleDateString('id-ID'),
+                        subuh: '04:45',
+                        dzuhur: '12:00',
+                        ashar: '15:15',
+                        maghrib: '18:00',
+                        isya: '19:30'
+                    };
+                    displayPrayerTimes(fallbackTimes);
+                    generateSchedules(fallbackTimes);
+                });
+            
+            // Display prayer times
+            function displayPrayerTimes(times) {
+                const prayerHeader = document.getElementById('prayer-times-header');
+                prayerHeader.innerHTML = `
+                    <span>Subuh: ${times.subuh}</span>
+                    <span>Dzuhur: ${times.dzuhur}</span>
+                    <span>Ashar: ${times.ashar}</span>
+                    <span>Maghrib: ${times.maghrib}</span>
+                    <span>Isya: ${times.isya}</span>
+                `;
+                
+                const prayerDetail = `
+                    <div class="row">
+                        <div class="col">
+                            <div class="prayer-time p-2 mb-2">Subuh<br><strong>${times.subuh}</strong></div>
+                        </div>
+                        <div class="col">
+                            <div class="prayer-time p-2 mb-2">Dzuhur<br><strong>${times.dzuhur}</strong></div>
+                        </div>
+                        <div class="col">
+                            <div class="prayer-time p-2 mb-2">Ashar<br><strong>${times.ashar}</strong></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="prayer-time p-2">Maghrib<br><strong>${times.maghrib}</strong></div>
+                        </div>
+                        <div class="col">
+                            <div class="prayer-time p-2">Isya<br><strong>${times.isya}</strong></div>
+                        </div>
+                        <div class="col">
+                            <div class="p-2">Tanggal<br><strong>${times.tanggal}</strong></div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('prayer-times-detail').innerHTML = prayerDetail;
+                document.getElementById('prayer-times-detail2').innerHTML = prayerDetail;
+                document.getElementById('prayer-times-detail3').innerHTML = prayerDetail;
+                document.getElementById('prayer-times-detail4').innerHTML = prayerDetail;
+            }
+            
+            // Generate schedules based on prayer times
+            function generateSchedules(prayerTimes) {
+                // Shift 1 (07:00-15:00)
+                const shift1Schedule = document.getElementById('shift1-schedule');
+                shift1Schedule.innerHTML = `
+                    <div class="prayer-time time-block" id="prayer-subuh">
+                        <strong>${prayerTimes.subuh}</strong> - Subuh Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="meal-time time-block">
+                        <strong>06:00 - Breakfast</strong><br>
+                        • 5 egg whites + whole wheat bread + milk
+                    </div>
+                    <div class="work-time time-block">
+                        <strong>07:00 - Work Shift Starts</strong>
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-dzuhur">
+                        <strong>${prayerTimes.dzuhur}</strong> - Dzuhur Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="meal-time time-block">
+                        <strong>12:30 - Lunch</strong><br>
+                        • Rice + meat + vegetables
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-ashar">
+                        <strong>${prayerTimes.ashar}</strong> - Ashar Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="work-time time-block">
+                        <strong>15:00 - Work Shift Ends</strong>
+                    </div>
+                    <div class="report-time time-block">
+                        <strong>15:00-15:20 - Reporting</strong>
+                    </div>
+                    <div class="travel-time time-block">
+                        <strong>15:20-15:30 - Travel Home</strong>
+                    </div>
+                    <div class="skill-time time-block">
+                        <strong>16:00 - Skill Development</strong><br>
+                        • Coding practice
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-maghrib">
+                        <strong>${prayerTimes.maghrib}</strong> - Maghrib Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-isya">
+                        <strong>${prayerTimes.isya}</strong> - Isya Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="meal-time time-block">
+                        <strong>20:00 - Dinner</strong><br>
+                        • Rice + chicken + vegetables
+                    </div>
+                    <div class="sleep-time time-block">
+                        <strong>22:00 - Sleep</strong> (7 hours)
+                    </div>
+                `;
+                
+                // Shift 2 (15:00-23:00)
+                const shift2Schedule = document.getElementById('shift2-schedule');
+                shift2Schedule.innerHTML = `
+                    <div class="prayer-time time-block" id="prayer-subuh2">
+                        <strong>${prayerTimes.subuh}</strong> - Subuh Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="meal-time time-block">
+                        <strong>09:00 - Breakfast</strong><br>
+                        • Oatmeal + eggs + milk
+                    </div>
+                    <div class="study-time time-block">
+                        <strong>10:00 - Morning Study</strong><br>
+                        • Focused learning
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-dzuhur2">
+                        <strong>${prayerTimes.dzuhur}</strong> - Dzuhur Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="meal-time time-block">
+                        <strong>13:00 - Lunch</strong><br>
+                        • Nasi Padang (extra meat)
+                    </div>
+                    <div class="work-time time-block">
+                        <strong>15:00 - Work Shift Starts</strong>
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-ashar2">
+                        <strong>${prayerTimes.ashar}</strong> - Ashar Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="meal-time time-block">
+                        <strong>17:00 - Snack</strong><br>
+                        • Cheese sandwich
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-maghrib2">
+                        <strong>${prayerTimes.maghrib}</strong> - Maghrib Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-isya2">
+                        <strong>${prayerTimes.isya}</strong> - Isya Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="work-time time-block">
+                        <strong>23:00 - Work Shift Ends</strong>
+                    </div>
+                    <div class="report-time time-block">
+                        <strong>23:00-23:20 - Reporting</strong>
+                    </div>
+                    <div class="travel-time time-block">
+                        <strong>23:20-23:30 - Travel Home</strong>
+                    </div>
+                    <div class="meal-time time-block">
+                        <strong>23:30 - Dinner</strong><br>
+                        • Rice + chicken + soup
+                    </div>
+                    <div class="sleep-time time-block">
+                        <strong>01:00 - Sleep</strong> (7 hours)
+                    </div>
+                `;
+                
+                // Shift 3 (23:00-07:00) - No sleep during work
+                const shift3Schedule = document.getElementById('shift3-schedule');
+                shift3Schedule.innerHTML = `
+                    <div class="prayer-time time-block" id="prayer-subuh3">
+                        <strong>${prayerTimes.subuh}</strong> - Subuh Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="meal-time time-block">
+                        <strong>12:00 - Brunch</strong><br>
+                        • Rice + chicken + avocado
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-dzuhur3">
+                        <strong>${prayerTimes.dzuhur}</strong> - Dzuhur Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="study-time time-block">
+                        <strong>13:00 - Study Session</strong><br>
+                        • Complete assignments
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-ashar3">
+                        <strong>${prayerTimes.ashar}</strong> - Ashar Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="skill-time time-block">
+                        <strong>16:00 - Skill Development</strong><br>
+                        • Project work
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-maghrib3">
+                        <strong>${prayerTimes.maghrib}</strong> - Maghrib Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-isya3">
+                        <strong>${prayerTimes.isya}</strong> - Isya Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="meal-time time-block">
+                        <strong>20:00 - Dinner</strong><br>
+                        • Nasi Padang (double meat)
+                    </div>
+                    <div class="work-time time-block">
+                        <strong>23:00 - Work Shift Starts</strong>
+                    </div>
+                    <div class="meal-time time-block">
+                        <strong>02:00 - Night Snack</strong><br>
+                        • Protein bar + milk
+                    </div>
+                    <div class="work-time time-block">
+                        <strong>07:00 - Work Shift Ends</strong>
+                    </div>
+                    <div class="report-time time-block">
+                        <strong>07:00-07:20 - Reporting</strong>
+                    </div>
+                    <div class="travel-time time-block">
+                        <strong>07:20-07:30 - Travel Home</strong>
+                    </div>
+                    <div class="sleep-time time-block">
+                        <strong>08:00 - Sleep</strong> (7 hours)
+                    </div>
+                `;
+                
+                // Day Off Schedule
+                const dayoffSchedule = document.getElementById('dayoff-schedule');
+                dayoffSchedule.innerHTML = `
+                    <div class="prayer-time time-block" id="prayer-subuh4">
+                        <strong>${prayerTimes.subuh}</strong> - Subuh Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="meal-time time-block">
+                        <strong>08:00 - Breakfast</strong><br>
+                        • Big portion with smoothie
+                    </div>
+                    <div class="study-time time-block">
+                        <strong>09:00 - Intensive Study (3 hours)</strong><br>
+                        • Exam preparation<br>
+                        • Research projects
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-dzuhur4">
+                        <strong>${prayerTimes.dzuhur}</strong> - Dzuhur Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="meal-time time-block">
+                        <strong>12:30 - Lunch</strong><br>
+                        • Extra protein meal
+                    </div>
+                    <div class="skill-time time-block">
+                        <strong>14:00 - Skill Development (2 hours)</strong><br>
+                        • Advanced courses<br>
+                        • Portfolio projects
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-ashar4">
+                        <strong>${prayerTimes.ashar}</strong> - Ashar Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="entertainment-time time-block">
+                        <strong>16:00 - Extended Entertainment</strong><br>
+                        • Movie (1 full)<br>
+                        • Gaming session (2 hours max)
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-maghrib4">
+                        <strong>${prayerTimes.maghrib}</strong> - Maghrib Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="prayer-time time-block" id="prayer-isya4">
+                        <strong>${prayerTimes.isya}</strong> - Isya Prayer
+                        <span class="prayer-badge">Wajib</span>
+                    </div>
+                    <div class="meal-time time-block">
+                        <strong>20:00 - Dinner</strong><br>
+                        • Balanced meal
+                    </div>
+                    <div class="sleep-time time-block">
+                        <strong>23:00 - Sleep</strong> (8 hours)
+                    </div>
+                `;
+            }
+            
+            // Highlight current prayer time
+            function highlightCurrentPrayer(prayerTimes) {
+                const now = new Date();
+                const currentHour = now.getHours();
+                const currentMinute = now.getMinutes();
+                const currentTime = currentHour * 60 + currentMinute;
+                
+                // Convert prayer times to minutes since midnight
+                const prayerMinutes = {
+                    subuh: convertTimeToMinutes(prayerTimes.subuh),
+                    dzuhur: convertTimeToMinutes(prayerTimes.dzuhur),
+                    ashar: convertTimeToMinutes(prayerTimes.ashar),
+                    maghrib: convertTimeToMinutes(prayerTimes.maghrib),
+                    isya: convertTimeToMinutes(prayerTimes.isya)
+                };
+                
+                // Determine which prayer time is current or next
+                let currentPrayer = null;
+                const prayerOrder = ['subuh', 'dzuhur', 'ashar', 'maghrib', 'isya'];
+                
+                for (const prayer of prayerOrder) {
+                    if (currentTime < prayerMinutes[prayer]) {
+                        currentPrayer = prayer;
+                        break;
+                    }
+                }
+                
+                // If all prayers passed today, next is subuh tomorrow
+                if (!currentPrayer) currentPrayer = 'subuh';
+                
+                // Highlight the current/next prayer
+                for (const prayer of prayerOrder) {
+                    const elements = document.querySelectorAll(`#prayer-${prayer}, #prayer-${prayer}2, #prayer-${prayer}3, #prayer-${prayer}4`);
+                    elements.forEach(el => {
+                        if (prayer === currentPrayer) {
+                            el.classList.add('current-prayer');
+                        } else {
+                            el.classList.remove('current-prayer');
+                        }
+                    });
+                }
+                
+                // Update every minute
+                setTimeout(highlightCurrentPrayer, 60000, prayerTimes);
+            }
+            
+            // Highlight current activity based on time
+            function highlightCurrentActivity(currentShift, prayerTimes) {
+                const now = new Date();
+                const currentHour = now.getHours();
+                const currentMinute = now.getMinutes();
+                const currentTime = currentHour * 60 + currentMinute;
+                
+                // Clear previous highlights
+                document.querySelectorAll('.time-block').forEach(block => {
+                    block.classList.remove('current-activity');
+                });
+                
+                // Get schedule for current shift
+                const schedule = document.getElementById(`${currentShift}-schedule`);
+                if (!schedule) return;
+                
+                const timeBlocks = schedule.querySelectorAll('.time-block');
+                let currentActivity = null;
+                
+                // Find the current activity
+                for (const block of timeBlocks) {
+                    const timeText = block.querySelector('strong')?.textContent;
+                    if (!timeText) continue;
+                    
+                    // Extract time (format: "HH:MM" or "HH:MM - ")
+                    const timeMatch = timeText.match(/(\d{1,2}):(\d{2})/);
+                    if (!timeMatch) continue;
+                    
+                    const blockHour = parseInt(timeMatch[1]);
+                    const blockMinute = parseInt(timeMatch[2]);
+                    const blockTime = blockHour * 60 + blockMinute;
+                    
+                    // Special case for sleep blocks
+                    if (block.classList.contains('sleep-time')) {
+                        const sleepMatch = block.textContent.match(/(\d{1,2}):(\d{2})/);
+                        if (sleepMatch) {
+                            const sleepStart = parseInt(sleepMatch[1]) * 60 + parseInt(sleepMatch[2]);
+                            const sleepEnd = sleepStart + 7 * 60; // Assuming 7 hours sleep
+                            
+                            // Handle overnight sleep
+                            const adjustedSleepEnd = sleepEnd > 1440 ? sleepEnd - 1440 : sleepEnd;
+                            const adjustedCurrentTime = currentTime;
+                            
+                            if ((adjustedCurrentTime >= sleepStart && adjustedCurrentTime <= 1440) ||
+                                (adjustedCurrentTime >= 0 && adjustedCurrentTime <= adjustedSleepEnd)) {
+                                currentActivity = block;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // For work blocks (shift start to shift end)
+                    if (block.classList.contains('work-time')) {
+                        const shiftMatch = block.textContent.match(/(\d{1,2}):(\d{2}).*?(\d{1,2}):(\d{2})/);
+                        if (shiftMatch) {
+                            const shiftStart = parseInt(shiftMatch[1]) * 60 + parseInt(shiftMatch[2]);
+                            const shiftEnd = parseInt(shiftMatch[3]) * 60 + parseInt(shiftMatch[4]);
+                            
+                            // Handle overnight shift
+                            const adjustedShiftEnd = shiftEnd < shiftStart ? shiftEnd + 1440 : shiftEnd;
+                            const adjustedCurrentTime = currentTime < shiftStart ? currentTime + 1440 : currentTime;
+                            
+                            if (adjustedCurrentTime >= shiftStart && adjustedCurrentTime <= adjustedShiftEnd) {
+                                currentActivity = block;
+                                break;
+                            }
+                        } else {
+                            // For single time work blocks
+                            if (currentTime >= blockTime && currentTime <= blockTime + 30) {
+                                currentActivity = block;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // For other blocks, highlight if current time is within 30 minutes after the block time
+                    if (currentTime >= blockTime && currentTime <= blockTime + 30) {
+                        currentActivity = block;
+                        break;
+                    }
+                }
+                
+                // Highlight the current activity
+                if (currentActivity) {
+                    currentActivity.classList.add('current-activity');
+                    
+                    // Scroll to the current activity
+                    setTimeout(() => {
+                        currentActivity.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 500);
+                }
+                
+                // Update every minute
+                setTimeout(highlightCurrentActivity, 60000, currentShift, prayerTimes);
+            }
+            
+            // Helper function to convert "HH:MM" to minutes
+            function convertTimeToMinutes(timeStr) {
+                const [hours, minutes] = timeStr.split(':').map(Number);
+                return hours * 60 + minutes;
+            }
+        });
+    </script>
+</body>
+</html>
